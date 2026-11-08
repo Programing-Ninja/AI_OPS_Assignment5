@@ -1,0 +1,11 @@
+unmodified eta_app.py      -> 22 passed, 1 warning in 0.88s
+no cross-field rule        -> KILLED   (1 failed, 21 passed, 1 warning in 0.91s)
+no rounding                -> KILLED   (2 failed, 20 passed, 1 warning in 0.97s)
+batch limit 1000           -> KILLED   (1 failed, 21 passed, 1 warning in 0.96s)
+/metrics counted           -> KILLED   (1 failed, 21 passed, 1 warning in 0.91s)
+500 leaks internals        -> KILLED   (1 failed, 21 passed, 1 warning in 0.91s)
+request id not echoed      -> KILLED   (3 failed, 19 passed, 1 warning in 0.97s)
+batch order reversed       -> KILLED   (1 failed, 21 passed, 1 warning in 0.92s)
+weight_kg >= 0 allowed     -> KILLED   (1 failed, 21 passed, 1 warning in 0.94s)
+
+8/8 mutations killed
