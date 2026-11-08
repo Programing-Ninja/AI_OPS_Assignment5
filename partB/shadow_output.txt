@@ -1,0 +1,11 @@
+prod      ready on :5101 after 3.5 s
+candidate ready on :5102 after 0.0 s
+alias demo: prod alias moved 1 -> 2; running :5101 answered 'v1' before and 'v1' after the move (alias resolved once, at start-up)
+alias demo: prod alias restored to version 1
+requests per server        : 200 identical single-row requests (data/eta_fresh.csv rows 0..199)
+versions answering         : prod=['v1']  candidate=['v2']
+(i)   mean |prod - cand|   : 9.48 min   (median 7.10, max 51.7)
+(ii)  share |diff| > 10 min: 35.0 %  (70 of 200)
+(iii) p95 latency          : prod 3.67 ms   candidate 3.53 ms
+      p50 latency          : prod 3.37 ms   candidate 3.17 ms
+extra (labels are known here, not in a real shadow): MAE prod 11.42 min, candidate 6.11 min
