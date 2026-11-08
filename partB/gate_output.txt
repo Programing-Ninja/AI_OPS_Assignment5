@@ -1,0 +1,95 @@
+$ python partB/eta_mlflow.py table
+|   version | bundle   | aliases   | run_id   |
+|----------:|:---------|:----------|:---------|
+|         1 | v1       | prod      | 8b361f97 |
+|         2 | v2       | candidate | 4d1522aa |
+
+$ python partB/eta_mlflow.py gate   # default thresholds
+{
+  "criteria": {
+    "mae_gain": {
+      "value": 0.4894,
+      "threshold": 0.03,
+      "pass": true
+    },
+    "latency_p95": {
+      "value": 1.1937,
+      "threshold": 10.0,
+      "pass": true
+    },
+    "slice_rush": {
+      "value": -0.564,
+      "threshold": 0.05,
+      "pass": true
+    },
+    "slice_rain": {
+      "value": -0.4592,
+      "threshold": 0.05,
+      "pass": true
+    }
+  },
+  "promote": true,
+  "thresholds": "defaults",
+  "metrics": {
+    "prod": {
+      "mae": 11.9553,
+      "mae_rush": 19.6799,
+      "mae_rain": 11.6227,
+      "p95_ms": 1.2908,
+      "model_version": "v1"
+    },
+    "candidate": {
+      "mae": 6.1049,
+      "mae_rush": 8.5795,
+      "mae_rain": 6.2853,
+      "p95_ms": 1.1937,
+      "model_version": "v2"
+    }
+  }
+}
+
+$ python partB/eta_mlflow.py gate --min-rel-gain 0.60
+{
+  "criteria": {
+    "mae_gain": {
+      "value": 0.4894,
+      "threshold": 0.6,
+      "pass": false
+    },
+    "latency_p95": {
+      "value": 1.241,
+      "threshold": 10.0,
+      "pass": true
+    },
+    "slice_rush": {
+      "value": -0.564,
+      "threshold": 0.05,
+      "pass": true
+    },
+    "slice_rain": {
+      "value": -0.4592,
+      "threshold": 0.05,
+      "pass": true
+    }
+  },
+  "promote": false,
+  "thresholds": {
+    "min_rel_gain": 0.6
+  },
+  "metrics": {
+    "prod": {
+      "mae": 11.9553,
+      "mae_rush": 19.6799,
+      "mae_rain": 11.6227,
+      "p95_ms": 1.4033,
+      "model_version": "v1"
+    },
+    "candidate": {
+      "mae": 6.1049,
+      "mae_rush": 8.5795,
+      "mae_rain": 6.2853,
+      "p95_ms": 1.241,
+      "model_version": "v2"
+    }
+  }
+}
