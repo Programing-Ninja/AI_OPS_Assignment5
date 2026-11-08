@@ -1,0 +1,37 @@
+=== setup
+Ray cluster resources: CPU=2.0
+worst-case CPU reservation: router 0.25 + prod 2x0.25 + candidate 3x0.25 = 1.50 CPU (<= 2)
+candidate autoscaling_config: {"min_replicas": 1, "initial_replicas": 1, "max_replicas": 3, "target_ongoing_requests": 2, "upscale_delay_s": 5, "downscale_delay_s": 60, "look_back_period_s": 10, "metrics_interval_s": 2}
+deployed weight=0.2 in 3.1 s; replicas: {'EtaModelProd': {'RUNNING': 2}, 'EtaModelCandidate': {'RUNNING': 1}, 'EtaRouter': {'RUNNING': 1}}
+available CPU after deploy: 1.00
+
+=== (a) share of 1000 distinct customers routed to the candidate
+[PASS] (a) candidate share within 0.2 +- 0.04
+       share = 0.202 (202 of 1000); offline bucket() predicts 0.202; prod served by 2 replicas
+
+=== (b) stickiness: 200 customers call a second time (with a different payload row)
+[PASS] (b) 200/200 customers keep their arm
+       200/200 identical; of these 44 on v2
+
+=== (c) delete + redeploy the identical app (new replicas, new processes)
+   redeployed in 3.1 s; replicas: {'EtaModelProd': {'RUNNING': 2}, 'EtaModelCandidate': {'RUNNING': 1}, 'EtaRouter': {'RUNNING': 1}}
+[PASS] (c) 200/200 customers keep their arm after redeploy
+       200/200 identical; replica ids overlap with the first deployment: 0 (0 = genuinely new replicas)
+
+=== (d) ramp the canary 0.2 -> 0.5
+   updated in 4.0 s; replicas: {'EtaModelProd': {'RUNNING': 2}, 'EtaModelCandidate': {'RUNNING': 1}, 'EtaRouter': {'RUNNING': 1}}
+[PASS] (d) nobody on the candidate moves back to prod
+       202 customers were on v2 -> 202 still on v2, 0 moved back; 289 prod customers newly joined v2; new share 0.491
+
+=== (e) X-Beta: 1 header override for 50 prod customers
+[PASS] (e) X-Beta: 1 forces the candidate on 50/50 requests
+       50/50 routed to v2 with the header; same customers without it (X-Beta: 0): Counter({'v1': 10})
+
+(extra) invalid input through the router -> HTTP 422
+
+--- optional: autoscaling demo (candidate gets 100 % of traffic, 40 ms of simulated work) ---
+   (t_s, candidate RUNNING replicas): [(0, 1), (3, 1), (6, 1), (9, 3), (12, 3), (15, 3), (18, 3), (21, 3), (24, 3), (27, 3)]
+   max replicas reached: 3 (max_replicas=3)
+[33m(raylet)[0m Task ServeController.graceful_shutdown failed. There are infinite retries remaining, so the task will be retried. Error: The actor is dead because it was killed by `ray.kill`.
+
+ALL 5 CHECKS PASSED
