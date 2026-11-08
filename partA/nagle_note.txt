@@ -1,0 +1,27 @@
+A3.4 side finding -- `uvicorn --workers 2` can be ~20x SLOWER than 1 worker (environment-dependent)
+
+Measured 2026-11-06 in a DIFFERENT environment from the main results: conda env with Python 3.11.14,
+uvicorn 0.54.0, h11 0.16.0, and NO httptools / uvloop installed (so uvicorn falls back to h11 + asyncio).
+Same eta_app.py, same load_test.py, same machine.
+
+uvicorn --workers 2 (h11 + asyncio):
+ concurrency  requests   rps  p50_ms  p95_ms  p99_ms  errors
+           1        90  22.5    44.0    48.1    52.1       0
+           2       176  44.0    44.1    51.9    52.5       0
+           4       352  88.0    44.2    51.7    52.3       0
+           8       682 170.5    47.9    52.5    55.2       0
+          16      1303 325.8    49.0    56.5    60.5       0
+(1 worker in the same env: 546 rps / p50 1.8 ms at concurrency 1)
+
+Raw-socket probe on one keep-alive connection: 1st POST 2.41 ms, then 46.63, 43.97, 44.03, 43.95 ms.
+
+Diagnosis: a flat ~40-44 ms per request = Nagle's algorithm on the server + delayed ACK (40 ms) on the client.
+ - With --workers N, uvicorn binds the listening socket itself as socket(AF_INET, SOCK_STREAM) -> proto == 0.
+ - asyncio's base_events._set_nodelay() only sets TCP_NODELAY if sock.proto == IPPROTO_TCP, so accepted
+   connections keep Nagle ON. (Single-worker mode creates the socket via getaddrinfo -> proto 6 -> NODELAY set.)
+ - h11 writes the response headers and the body in two send() calls; the second small segment waits for the
+   ACK of the first, which the client delays by 40 ms.
+Fixes: gunicorn -w 2 -k uvicorn.workers.UvicornWorker (gunicorn sets TCP_NODELAY on the listener and Linux
+copies it to accepted sockets): 1300 rps, p50 12 ms at concurrency 16 in that env. Installing
+httptools/uvloop (uvicorn[standard]; also pulled in by ray[serve]) also avoids it -- which is why the
+clean requirements.txt environment used for the main results does NOT show the stall.

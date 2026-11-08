@@ -1,0 +1,35 @@
+== A3.1  1 worker, batch 1, concurrency sweep
+ concurrency  requests   rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+           1      2263 565.8     1.7     2.1     2.3       0         1 {'v1': 2263}
+           2      2818 704.5     2.8     3.8     4.3       0         1 {'v1': 2818}
+           4      2853 713.2     5.5     7.9     9.0       0         1 {'v1': 2853}
+           8      2660 665.0    11.8    16.9    19.4       0         1 {'v1': 2660}
+          16      2602 650.5    24.2    34.0    50.7       0         1 {'v1': 2602}
+load generator: 20.31 s wall, 9.53 s user, 0.82 s sys, 50% CPU
+== A3.2  extended sweep past the knee: where does p95 cross the 80 ms SLO?
+ concurrency  requests   rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+          24      2499 624.8    37.1    55.2    75.0       0         1 {'v1': 2499}
+          32      2515 628.8    49.9    74.7    93.2       0         1 {'v1': 2515}
+          48      2479 619.8    76.7   109.1   125.9       0         1 {'v1': 2479}
+          64      2500 625.0   100.4   135.4   153.9       0         1 {'v1': 2500}
+== A3.3  batch 1 vs batch 100 at concurrency 1
+ concurrency  requests   rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+           1      2183 545.8     1.8     2.2     2.3       0         1 {'v1': 2183}
+ concurrency  requests   rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+           1      1719 429.8     2.3     2.6     2.6       0         1 {'v1': 1719}
+== A3.4a  change: 2 worker processes (uvicorn --workers 2)
+ concurrency  requests    rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+           1      2070  517.5     1.9     2.2     2.4       0         1 {'v1': 2070}
+           2      3839  959.8     2.0     2.6     3.0       0         1 {'v1': 3839}
+           4      4690 1172.5     3.3     4.8     5.9       0         1 {'v1': 4690}
+           8      4975 1243.8     6.2     9.6    11.7       0         1 {'v1': 4975}
+          16      4923 1230.8    12.8    18.9    23.1       0         1 {'v1': 4923}
+load generator: 20.31 s wall, 14.24 s user, 1.16 s sys, 75% CPU
+== A3.4b  same change via gunicorn -w 2 (sets TCP_NODELAY itself; immune to the Nagle stall, see partA/nagle_note.txt)
+ concurrency  requests    rps  p50_ms  p95_ms  p99_ms  errors  replicas     versions
+           1      2215  553.8     1.8     2.1     2.3       0         1 {'v1': 2215}
+           2      2810  702.5     2.8     3.8     4.2       0         1 {'v1': 2810}
+           4      4853 1213.2     3.2     4.7     5.5       0         1 {'v1': 4853}
+           8      4955 1238.8     6.3     9.6    11.5       0         1 {'v1': 4955}
+          16      4837 1209.2    12.9    19.9    25.3       0         1 {'v1': 4837}
+load generator: 20.31 s wall, 13.72 s user, 1.15 s sys, 73% CPU
