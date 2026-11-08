@@ -1,0 +1,87 @@
+### Part A server (v1) on :8000
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v1
+[PASS] health endpoint              HTTP 200 {'status': 'ok', 'model_version': 'v1'}
+[PASS] response contract            HTTP 200, 3 rows -> [106.7, 42.2, 261.4], request id echoed
+[PASS] model version                served 'v1', expected 'v1'
+[PASS] plausible range              ETAs [8.9, 106.7, 605.7] within [1, 1440] min
+[PASS] deterministic                [106.7] == [106.7]
+[PASS] sanity: distance monotone    distance_km [2, 10, 30, 60, 120] -> ETA [34.4, 55.1, 106.7, 184.0, 338.8]
+[PASS] sanity: traffic monotone     traffic_index [0.0, 0.25, 0.5, 0.75, 1.0] -> ETA [85.3, 96.0, 106.7, 117.4, 128.0]
+[PASS] sanity: stops monotone       n_stops [1, 5, 10, 20] -> ETA [85.0, 102.3, 124.0, 167.2]
+[PASS] invalid input -> 422         hour=25 -> HTTP 422
+[PASS] cross-field rule -> 422      200 km & 30 stops -> HTTP 422
+[PASS] latency p95                  p95 2.3 ms over 50 requests (limit 80.0 ms)
+
+11/11 checks passed -> RELEASE OK (exit 0)
+exit code: 0
+
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v2
+[PASS] health endpoint              HTTP 200 {'status': 'ok', 'model_version': 'v1'}
+[PASS] response contract            HTTP 200, 3 rows -> [106.7, 42.2, 261.4], request id echoed
+[FAIL] model version                served 'v1', expected 'v2'
+[PASS] plausible range              ETAs [8.9, 106.7, 605.7] within [1, 1440] min
+[PASS] deterministic                [106.7] == [106.7]
+[PASS] sanity: distance monotone    distance_km [2, 10, 30, 60, 120] -> ETA [34.4, 55.1, 106.7, 184.0, 338.8]
+[PASS] sanity: traffic monotone     traffic_index [0.0, 0.25, 0.5, 0.75, 1.0] -> ETA [85.3, 96.0, 106.7, 117.4, 128.0]
+[PASS] sanity: stops monotone       n_stops [1, 5, 10, 20] -> ETA [85.0, 102.3, 124.0, 167.2]
+[PASS] invalid input -> 422         hour=25 -> HTTP 422
+[PASS] cross-field rule -> 422      200 km & 30 stops -> HTTP 422
+[PASS] latency p95                  p95 2.2 ms over 50 requests (limit 80.0 ms)
+
+10/11 checks passed -> BLOCK RELEASE (exit 1): model version
+exit code: 1
+
+### server stopped
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v1
+[FAIL] cannot reach http://127.0.0.1:8000 (ConnectionError) -> BLOCK RELEASE (exit 1)
+exit code: 1
+
+### Ray Serve router (Part C, weight 0.1) on :8000
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v2 --customer-id smoke-beta --beta
+[PASS] health endpoint              HTTP 200 {'status': 'ok', 'canary_weight': 0.1, 'salt': 'swiftparcel-eta-canary-v2'}
+[PASS] response contract            HTTP 200, 3 rows -> [123.9, 51.6, 301.2], request id echoed
+[PASS] model version                served 'v2', expected 'v2'
+[PASS] plausible range              ETAs [26.6, 123.9, 446.2] within [1, 1440] min
+[PASS] deterministic                [123.9] == [123.9]
+[PASS] sanity: distance monotone    distance_km [2, 10, 30, 60, 120] -> ETA [44.0, 63.4, 123.9, 213.7, 324.2]
+[PASS] sanity: traffic monotone     traffic_index [0.0, 0.25, 0.5, 0.75, 1.0] -> ETA [91.6, 106.4, 123.9, 149.3, 159.2]
+[PASS] sanity: stops monotone       n_stops [1, 5, 10, 20] -> ETA [108.8, 123.9, 145.0, 185.8]
+[PASS] invalid input -> 422         hour=25 -> HTTP 422
+[PASS] cross-field rule -> 422      200 km & 30 stops -> HTTP 422
+[PASS] latency p95                  p95 6.2 ms over 50 requests (limit 80.0 ms)
+
+11/11 checks passed -> RELEASE OK (exit 0)
+exit code: 0
+
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v1 --customer-id cust-00000
+[PASS] health endpoint              HTTP 200 {'status': 'ok', 'canary_weight': 0.1, 'salt': 'swiftparcel-eta-canary-v2'}
+[PASS] response contract            HTTP 200, 3 rows -> [106.7, 42.2, 261.4], request id echoed
+[PASS] model version                served 'v1', expected 'v1'
+[PASS] plausible range              ETAs [8.9, 106.7, 605.7] within [1, 1440] min
+[PASS] deterministic                [106.7] == [106.7]
+[PASS] sanity: distance monotone    distance_km [2, 10, 30, 60, 120] -> ETA [34.4, 55.1, 106.7, 184.0, 338.8]
+[PASS] sanity: traffic monotone     traffic_index [0.0, 0.25, 0.5, 0.75, 1.0] -> ETA [85.3, 96.0, 106.7, 117.4, 128.0]
+[PASS] sanity: stops monotone       n_stops [1, 5, 10, 20] -> ETA [85.0, 102.3, 124.0, 167.2]
+[PASS] invalid input -> 422         hour=25 -> HTTP 422
+[PASS] cross-field rule -> 422      200 km & 30 stops -> HTTP 422
+[PASS] latency p95                  p95 6.4 ms over 50 requests (limit 80.0 ms)
+
+11/11 checks passed -> RELEASE OK (exit 0)
+exit code: 0
+
+$ python partD/smoke_eta.py --url http://127.0.0.1:8000 --expect-version v2 --customer-id cust-00000
+[PASS] health endpoint              HTTP 200 {'status': 'ok', 'canary_weight': 0.1, 'salt': 'swiftparcel-eta-canary-v2'}
+[PASS] response contract            HTTP 200, 3 rows -> [106.7, 42.2, 261.4], request id echoed
+[FAIL] model version                served 'v1', expected 'v2'
+[PASS] plausible range              ETAs [8.9, 106.7, 605.7] within [1, 1440] min
+[PASS] deterministic                [106.7] == [106.7]
+[PASS] sanity: distance monotone    distance_km [2, 10, 30, 60, 120] -> ETA [34.4, 55.1, 106.7, 184.0, 338.8]
+[PASS] sanity: traffic monotone     traffic_index [0.0, 0.25, 0.5, 0.75, 1.0] -> ETA [85.3, 96.0, 106.7, 117.4, 128.0]
+[PASS] sanity: stops monotone       n_stops [1, 5, 10, 20] -> ETA [85.0, 102.3, 124.0, 167.2]
+[PASS] invalid input -> 422         hour=25 -> HTTP 422
+[PASS] cross-field rule -> 422      200 km & 30 stops -> HTTP 422
+[PASS] latency p95                  p95 6.2 ms over 50 requests (limit 80.0 ms)
+
+10/11 checks passed -> BLOCK RELEASE (exit 1): model version
+exit code: 1
+
